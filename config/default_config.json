@@ -1,0 +1,13 @@
+{
+    "preprocess": {
+        "window": 20,
+        "prediction_day": 5,
+        "percentage": 0.05
+    },
+    "train": {
+        "batch": 64,
+        "optim": "Adam",
+        "lr": 0.001,
+        "epoch": 30
+    }
+}
