@@ -1,6 +1,5 @@
 import json
 
-from argparse import Namespace
 from pathlib import Path
 from datetime import datetime
 
@@ -9,8 +8,8 @@ from .model.sub_config import *
 
 
 class ConfigParser:
-    def __init__(self, args: Namespace):
-        self.config_file: str = args.config_file
+    def __init__(self, config_file: str):
+        self.config_file = config_file
         self.current_datetime_str = datetime.now().strftime("%Y%m%d%H%M%S")
 
         self.config_dict = self._read_config()
@@ -22,48 +21,35 @@ class ConfigParser:
         return config_dict
 
     def _update_config(self):
-        data_loader_config = FetcherConfig(
-            start_date=self.config_dict["data_loader"]["start_date"],
-            end_date=self.config_dict["data_loader"]["end_date"],
-            reg_exp=self.config_dict["data_loader"]["reg_exp"],
-            normalization=self.config_dict["data_loader"]["normalization"]
+        preprocess_config = PreprocessConfig(
+            start_date=self.config_dict["preprocess"]["start_date"],
+            end_date=self.config_dict["preprocess"]["end_date"],
+            save_path=self.config_dict["preprocess"]["save_path"],
+            window=self.config_dict["preprocess"]["window"],
+            prediction_day=self.config_dict["preprocess"]["prediction_day"],
+            percentage=self.config_dict["preprocess"]["percentage"],
+            volume=self.config_dict["preprocess"]["volume"]
         )
 
-        preprocessor_config = PreprocessorConfig(
-            split_ratio=self.config_dict["preprocessor"]["split_ratio"],
-            tokenizer=self.config_dict["preprocessor"]["tokenizer"],
-            bpe_vocab_size=self.config_dict["preprocessor"]["bpe_vocab_size"],
-            min_vocab_frequency=self.config_dict["preprocessor"]["min_vocab_frequency"],
-            max_vocab_percentage=self.config_dict["preprocessor"]["max_vocab_percentage"]
+        train_config = TrainConfig(
+            split_ratio=self.config_dict["train"]["split_ratio"],
+            image_size=self.config_dict["train"]["image_size"],
+            batch=self.config_dict["train"]["batch"],
+            optimizer=self.config_dict["train"]["optimizer"],
+            lr_scheduler=self.config_dict["train"]["lr_scheduler"],
+            lr=self.config_dict["train"]["lr"],
+            weight_decay=self.config_dict["train"]["weight_decay"],
+            num_epoch=self.config_dict["train"]["num_epoch"]
         )
-
-        trainer_config = TrainerConfig(
-            corpus_file_name=self.config_dict["trainer"]["corpus_file_name"],
-            dictionary_file_name=self.config_dict["trainer"]["dictionary_file_name"],
-        )
-
-        evaluator_config = EvaluatorConfig(
-            min_num_topics=self.config_dict["evaluator"]["min_num_topics"],
-            max_num_topics=self.config_dict["evaluator"]["max_num_topics"],
-            add_n_topics=self.config_dict["evaluator"]["add_n_topics"]
-        )
-
-        # predictor_config = PredictorConfig(
-        #
-        # )
 
         data_path = Path(self.config_dict["data_path"]).absolute()
-        out_path = Path(self.config_dict["out_path"]).absolute()
+        output_path = Path(self.config_dict["output_path"]).absolute()
 
         main_config = MainConfig(
-            data_base_connection=db_config,
-            data_loader=data_loader_config,
-            preprocessor=preprocessor_config,
-            trainer=trainer_config,
-            evaluator=evaluator_config,
-            # predictor=,
-            data_path=str(data_path),
-            out_path=str(out_path)
+            preprocess=preprocess_config,
+            train=train_config,
+            data_path=data_path,
+            output_path=output_path
         )
 
         return main_config

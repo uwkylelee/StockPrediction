@@ -1,9 +1,10 @@
+import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
 
 class VGG16(nn.Module):
-    def __init__(self):
+    def __init__(self, img_size):
         super(VGG16, self).__init__()
         self.conv1_1 = nn.Conv2d(in_channels=3, out_channels=64, kernel_size=3, padding=1)
         self.conv1_2 = nn.Conv2d(in_channels=64, out_channels=64, kernel_size=3, padding=1)
@@ -25,9 +26,10 @@ class VGG16(nn.Module):
 
         self.maxpool = nn.MaxPool2d(kernel_size=2, stride=2)
 
-        self.fc1 = nn.Linear(25088, 4096)
+        self.fc1 = nn.Linear(512, 4096)
         self.fc2 = nn.Linear(4096, 4096)
-        self.fc3 = nn.Linear(4096, 3)
+        self.fc3 = nn.Linear(4096, 2)
+        # self.fc3 = nn.Linear(4096, 1)
 
     def forward(self, x):
         x = F.relu(self.conv1_1(x))
@@ -54,4 +56,5 @@ class VGG16(nn.Module):
         x = F.relu(self.fc2(x))
         x = F.dropout(x, 0.5)
         x = self.fc3(x)
+        # x = torch.sigmoid(x)
         return x

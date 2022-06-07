@@ -1,13 +1,27 @@
 {
+    "data_path": "data",
+    "output_path": "output",
     "preprocess": {
+        "start_date": "2012-05-01",
+        "end_date": "2022-05-01",
+        "save_path": "stock_data",
         "window": 20,
         "prediction_day": 5,
-        "percentage": 0.05
+        "percentage": 0.05,
+        "volume": true
     },
     "train": {
-        "batch": 64,
-        "optim": "Adam",
-        "lr": 0.001,
-        "epoch": 30
+        "split_ratio": {
+            "train": 0.8,
+            "valid": 0.1,
+            "test": 0.1
+        },
+        "image_size": 50,
+        "batch": 256,
+        "optimizer": "Adam",
+        "lr_scheduler": "Exponential",
+        "lr": 1e-6,
+        "weight_decay": 1e-4,
+        "num_epoch": 50
     }
 }

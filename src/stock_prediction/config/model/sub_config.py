@@ -1,36 +1,31 @@
 from dataclasses import dataclass
+from typing import Dict
 
 
 @dataclass(frozen=True)
-class FetcherConfig:
+class PreprocessConfig:
     start_date: str
     end_date: str
-    reg_exp: str
-    normalization: bool
+    save_path: str
+    window: int
+    prediction_day: int
+    percentage: float
+    volume: bool
 
 
 @dataclass(frozen=True)
-class PreprocessorConfig:
-    split_ratio: float
-    tokenizer: str
-    bpe_vocab_size: int
-    min_vocab_frequency: int
-    max_vocab_percentage: float
-
-
-@dataclass(frozen=True)
-class TrainerConfig:
-    corpus_file_name: str
-    dictionary_file_name: str
-
-
-@dataclass(frozen=True)
-class EvaluatorConfig:
-    min_num_topics: int
-    max_num_topics: int
-    add_n_topics: int
+class TrainConfig:
+    split_ratio: Dict[str, float]
+    image_size: int
+    batch: int
+    optimizer: str
+    lr_scheduler: str
+    lr: float
+    weight_decay: float
+    num_epoch: int
 
 # @dataclass(frozen=True)
-# class PredictorConfig:
-#     corpus_file_name: str
-#     dictionary_file_name: str
+# class EvaluateConfig:
+
+# @dataclass(frozen=True)
+# class PredictConfig:

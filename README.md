@@ -17,3 +17,6 @@ Python Version: 3.7.9
 ## Run
 
 ## Process
+
+## Configurations
+To modify the configs, go to config/default_config.json.

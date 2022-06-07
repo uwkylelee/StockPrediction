@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from pathlib import Path
 
 from .sub_config import *
 
@@ -6,16 +7,12 @@ from .sub_config import *
 # Main Configs
 @dataclass(frozen=True)
 class MainConfig:
-    # Connection
-    data_base_connection: DataBaseConfig
-
     # Model
-    data_loader: DataLoaderConfig
-    preprocessor: PreprocessorConfig
-    trainer: TrainerConfig
-    evaluator: EvaluatorConfig
-    # predictor: PredictorConfig
+    preprocess: PreprocessConfig
+    train: TrainConfig
+    # evaluate: EvaluateConfig
+    # predict: PredictConfig
 
     # Path
-    data_path: str
-    out_path: str
+    data_path: Path
+    output_path: Path
