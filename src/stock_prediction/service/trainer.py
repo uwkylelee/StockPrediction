@@ -1,6 +1,10 @@
 import os
+import random
 
+import numpy as np
 import torch
+import torchvision.models as models
+import torch.backends.cudnn as cudnn
 import torch.nn as nn
 
 from sklearn.model_selection import train_test_split
@@ -8,10 +12,9 @@ from torch.optim.lr_scheduler import ExponentialLR
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
-from src.stock_prediction.components.utils import get_logger
+from src.stock_prediction.components.utils import get_logger, read_img
 from src.stock_prediction.config.model.main_config import MainConfig
 from src.stock_prediction.dataset.dataset import Dataset
-from src.stock_prediction.model.model import VGG16
 
 logger = get_logger("info", __name__)
 
@@ -22,7 +25,9 @@ class Trainer(object):
         self.save_path = config.output_path / "model"
         if not os.path.isdir(self.save_path):
             os.mkdir(self.save_path)
-        self.image_file_path = config.data_path / config.preprocess.save_path / "stock_chart_image"
+        self.image_file_path = config.data_path / config.preprocess.save_path
+        self.image_file_path = self.image_file_path / f"image_volume_{self.config.volume}_mav_{self.config.mav_line}"
+        self.image_file_path = self.image_file_path / "stock_chart_image_bin"
         self.device = "cuda:0" if torch.cuda.is_available() else "cpu"
         self.img_size = (self.config.image_size, self.config.image_size)
 
@@ -32,51 +37,66 @@ class Trainer(object):
         self.train_loader = None
         self.valid_loader = None
 
-        # Model definition
+        # Model Definition
         self.model = None
         self.criterion = None
         self.optimizer = None
         self.lr_scheduler = None
+
+        # Fix Random Seed for Reproducibility
+        torch.manual_seed(self.config.random_seed)
+        torch.cuda.manual_seed(self.config.random_seed)
+        torch.cuda.manual_seed_all(self.config.random_seed)
+        cudnn.benchmark = False
+        cudnn.deterministic = True
+        random.seed(self.config.random_seed)
 
     def execute(self):
         self._load_data()
         self._split_data()
         self.train_dataset = Dataset(self.X_train, self.Y_train, self.img_size)
         self.valid_dataset = Dataset(self.X_valid, self.Y_valid, self.img_size)
-        self.train_loader = DataLoader(self.train_dataset, batch_size=self.config.batch,
-                                       shuffle=True, drop_last=True)
-        self.valid_loader = DataLoader(self.valid_dataset, batch_size=self.config.batch,
-                                       shuffle=False, drop_last=True)
+        self.train_loader = DataLoader(self.train_dataset, batch_size=self.config.batch_size,
+                                       shuffle=True, pin_memory=True, drop_last=True)
+        self.valid_loader = DataLoader(self.valid_dataset, batch_size=64,
+                                       shuffle=False, pin_memory=True, drop_last=True)
         self._define_model()
         self._train()
-
-        return
 
     def _load_data(self):
         self.X = []
         self.Y = []
 
-        label_count = {0: 0, 1: 0}
+        label_count = {0: 0, 1: 0, 2: 0}
 
-        for img_path in tqdm(os.listdir(self.image_file_path)[:100000]):
-            if label_count[0] >= 10000 and label_count[1] >= 10000:
-                break
+        for img_path in tqdm(os.listdir(self.image_file_path)):
             if img_path == ".ipynb_checkpoints":
                 continue
+            if int(img_path.split("_")[-2][1:]) != self.img_size[0]:
+                continue
+
             img_path = str(self.image_file_path / img_path)
             label = int(img_path.split("_")[-1][0])
+
+            if label == 0 and label_count[0] >= 30000:
+                continue
             if label == 0:
                 continue
-            if label == 1 and label_count[0] >= 10000:
+            if label == 1 and label_count[1] >= 30000:
                 continue
-            if label == 2 and label_count[1] >= 10000:
+            if label == 2 and label_count[2] >= 30000:
                 continue
+
             self.X.append(img_path)
-            self.Y.append(0 if label == 1 else 1)
-            label_count[0 if label == 1 else 1] += 1
+            if self.config.is_binary:
+                self.Y.append(1 if label == 2 else 0)
+            else:
+                self.Y.append(label)
+            label_count[label] += 1
 
         print(label_count)
         print(len(self.Y))
+        print(label_count[1] / len(self.Y))
 
     def _split_data(self):
         train_ratio = self.config.split_ratio["train"]
@@ -94,16 +114,17 @@ class Trainer(object):
                                                                                 stratify=self.Y_valid)
 
     def _define_model(self):
-        self.model = VGG16(self.img_size[0])
+        self.model = getattr(models, self.config.model)(pretrained=self.config.pretrained)
         self.model.to(self.device)
 
-        # self.criterion = nn.BCELoss()
         self.criterion = nn.CrossEntropyLoss()
         self.criterion.to(self.device)
 
         self.opt_func = torch.optim.Adam if self.config.optimizer == "Adam" else torch.optim.SGD
         self.optimizer = self.opt_func(self.model.parameters(), self.config.lr, weight_decay=self.config.weight_decay)
-        self.lr_scheduler = ExponentialLR(self.optimizer, gamma=0.998)
+        self.lr_scheduler = ExponentialLR(self.optimizer, gamma=self.config.lr_gamma)
+        print(self.optimizer)
+        print(self.lr_scheduler.state_dict())
 
     def _train(self):
         self.results = []
@@ -111,7 +132,7 @@ class Trainer(object):
         for epoch in range(self.config.num_epoch):
             self.model.train()
             train_losses = []
-            for batch in tqdm(self.train_loader, desc=f"Epoch {epoch} Train: "):
+            for batch in tqdm(self.train_loader, desc=f"Epoch[{epoch}] Train Step: "):
                 self.optimizer.zero_grad()
                 loss = self._train_batch(batch)
                 train_losses.append(loss)
@@ -128,8 +149,10 @@ class Trainer(object):
 
             self.results.append(result)
 
-            logger.info("Epoch[{}]: train_loss: {:.4f}, valid_loss: {:.4f}, valid_acc: {:.4f}".format(
-                epoch, result["train_loss"], result["valid_loss"], result["valid_acc"]))
+            last_lr = self.lr_scheduler.get_last_lr()
+
+            logger.info("Epoch[{}]: train_loss: {:.4f}, valid_loss: {:.4f}, valid_acc: {:.4f}, lr: {:.4f}".format(
+                epoch, result["train_loss"], result["valid_loss"], result["valid_acc"], last_lr[0]))
 
             self._save_model(epoch)
 
@@ -146,7 +169,7 @@ class Trainer(object):
         self.model.eval()
         valid_losses = []
         valid_accs = []
-        for batch in tqdm(self.valid_loader, desc=f"Epoch {epoch} Evaluate: "):
+        for batch in tqdm(self.valid_loader, desc=f"Epoch[{epoch}] Evaluation Step: "):
             images, labels = batch
             images = images.to(self.device)
             labels = labels.to(self.device)
@@ -164,10 +187,17 @@ class Trainer(object):
 
     def _save_model(self, epoch):
         if epoch == 0 or self.results[-1]["valid_loss"] < min([result["valid_loss"] for result in self.results[:-1]]):
-            torch.save(self.model.state_dict(), self.save_path / "model.pt")
+            model_name = f"{self.config.model}_{self.config.image_size}_lr{abs(int(np.log10(self.config.lr)))}"
+            torch.save(self.model.state_dict(), self.save_path / f"{model_name}.pth")
             logger.info("Successfully saved model")
 
     @classmethod
     def accuracy(cls, outputs, labels):
         _, predictions = torch.max(outputs, dim=1)
+        return torch.tensor(torch.sum(predictions == labels).item() / len(predictions))
+
+    @classmethod
+    def binary_accuracy(cls, outputs, labels):
+        predictions = (outputs >= 0.5)
+        labels = (labels == 1)
         return torch.tensor(torch.sum(predictions == labels).item() / len(predictions))

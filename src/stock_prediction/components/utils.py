@@ -1,5 +1,6 @@
 import logging
 import os
+import pathlib
 import sys
 
 from typing import Tuple
@@ -39,7 +40,7 @@ def generate_dir(config: MainConfig):
         os.mkdir(config.output_path)
 
 
-def read_img(img_path: str, size: Tuple[int, int]) -> Image.Image:
+def read_img(img_path: pathlib.Path, size: Tuple[int, int]) -> Image.Image:
     img = cv2.imread(str(img_path), cv2.IMREAD_COLOR)
     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
     img = cv2.resize(img, size)

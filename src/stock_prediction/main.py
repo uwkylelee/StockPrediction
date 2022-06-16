@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 from pathlib import Path
 
 import typer
@@ -15,35 +14,33 @@ app = typer.Typer()
 
 
 @app.command()
-def fetch(
-        config_file: str = typer.Option(
-            default=f"{pwd}/config/default_config.json",
-            help=f"config file path (default: {pwd}/config/default_config.json)"
-        )
-):
-    config_parser = ConfigParser(config_file)
-    config = config_parser.main_config
-    generate_dir(config)
-
-
-@app.command()
 def preprocess(
         config_file: str = typer.Option(
             default=f"{pwd}/config/default_config.json",
-            help=f"Config file path option. Using default is strongly recommended."
+            help=f"Config file path option. Using default is strongly recommended./n"
         ),
         fetch_data: bool = typer.Option(
             default=False,
             help=f"If True, the preprocessor will fetch Top 10 KOSPI stock data from yahoo finance."
                  f"If False, the local stock data in {pwd}/data/stock_data/daily_stock_data will be used."
-        )
+        ),
+        mav_line: bool = typer.Option(
+            default=False,
+            help=f"If True, the stock chart image will contain mav_line."
+                 f"If False, the stock chart image will not contain mav_line."
+        ),
+        volume: bool = typer.Option(
+            default=False,
+            help=f"If True, the stock chart image will contain volume."
+                 f"If False, the stock chart image will not contain volume."
+        ),
 ):
     config_parser = ConfigParser(config_file)
     config = config_parser.main_config
     generate_dir(config)
 
     logger.info("Run preprocessor.")
-    preprocessor = Preprocessor(config)
+    preprocessor = Preprocessor(config, mav_line, volume)
     preprocessor.execute(fetch_data)
 
 
@@ -51,7 +48,7 @@ def preprocess(
 def train(
         config_file: str = typer.Option(
             default=f"{pwd}/config/default_config.json",
-            help=f"Config file path option. Using default is strongly recommended."
+            help=f"Config file path option. Using default is strongly recommended./n"
         )
 ):
     config_parser = ConfigParser(config_file)

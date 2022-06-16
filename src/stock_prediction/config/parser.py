@@ -27,16 +27,23 @@ class ConfigParser:
             save_path=self.config_dict["preprocess"]["save_path"],
             window=self.config_dict["preprocess"]["window"],
             prediction_day=self.config_dict["preprocess"]["prediction_day"],
-            percentage=self.config_dict["preprocess"]["percentage"],
-            volume=self.config_dict["preprocess"]["volume"]
+            percentage=self.config_dict["preprocess"]["percentage"]
         )
 
         train_config = TrainConfig(
+            mav_line=self.config_dict["train"]["mav_line"],
+            volume=self.config_dict["train"]["volume"],
+            is_binary=self.config_dict["train"]["is_binary"],
+            equalize=self.config_dict["train"]["equalize"],
+            random_seed=self.config_dict["train"]["random_seed"],
             split_ratio=self.config_dict["train"]["split_ratio"],
             image_size=self.config_dict["train"]["image_size"],
-            batch=self.config_dict["train"]["batch"],
+            batch_size=self.config_dict["train"]["batch_size"],
+            model=self.config_dict["train"]["model"],
+            pretrained=self.config_dict["train"]["pretrained"],
             optimizer=self.config_dict["train"]["optimizer"],
             lr_scheduler=self.config_dict["train"]["lr_scheduler"],
+            lr_gamma=self.config_dict["train"]["lr_gamma"],
             lr=self.config_dict["train"]["lr"],
             weight_decay=self.config_dict["train"]["weight_decay"],
             num_epoch=self.config_dict["train"]["num_epoch"]

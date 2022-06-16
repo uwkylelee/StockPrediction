@@ -10,16 +10,23 @@ class PreprocessConfig:
     window: int
     prediction_day: int
     percentage: float
-    volume: bool
 
 
 @dataclass(frozen=True)
 class TrainConfig:
+    mav_line: bool
+    volume: bool
+    is_binary: bool
+    equalize: bool
+    random_seed: int
     split_ratio: Dict[str, float]
     image_size: int
-    batch: int
+    batch_size: int
+    model: str
+    pretrained: bool
     optimizer: str
     lr_scheduler: str
+    lr_gamma: float
     lr: float
     weight_decay: float
     num_epoch: int

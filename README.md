@@ -16,6 +16,21 @@ Python Version: 3.7.9
 
 ## Run
 
+```
+export PYTHONPATH=${PWD}
+python3 src/stock_prediction/main.py
+```
+
+## Run Remote
+
+```
+conda deactivate
+cd stockPrediction/StockPrediction
+source venv/bin/activate
+export PYTHONPATH=${PWD}
+python3 src/stock_prediction/main.py
+```
+
 ## Process
 
 ## Configurations

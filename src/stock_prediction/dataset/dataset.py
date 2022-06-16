@@ -1,6 +1,7 @@
 from typing import Tuple, List
 
 import numpy as np
+import pickle
 import torch.utils.data
 import torchvision.transforms
 
@@ -21,13 +22,15 @@ class Dataset(torch.utils.data.Dataset):
         # self.meanRGB, self.stdRGB = self._calculate_mean_std()
         self.transform = torchvision.transforms.Compose(
             [
-                torchvision.transforms.ToTensor()
+                torchvision.transforms.ToTensor(),
+                # torchvision.transforms.Resize(self.img_size)
                 # torchvision.transforms.Normalize(mean=self.meanRGB, std=self.stdRGB)
             ]
         )
 
     def __getitem__(self, idx: int) -> Tuple:
-        X = read_img(self.X_data[idx], self.img_size)
+        with open(self.X_data[idx], "rb") as f:
+            X = pickle.load(f)
         return self.transform(X), self.Y_data[idx]
 
     def __len__(self) -> int:
