@@ -36,7 +36,7 @@ MANIFEST
 pip-log.txt
 pip-delete-this-directory.txt
 
-# Unit test / coverage reports
+# Unit stock / coverage reports
 htmlcov/
 .tox/
 .nox/
@@ -143,4 +143,11 @@ dmypy.json
 cython_debug/
 
 # PyCharm
-.idea/ 
+.idea/
+
+# output & data dir
+data/
+output/
+temp/
+log/
+stock_info/

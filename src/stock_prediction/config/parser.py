@@ -24,13 +24,13 @@ class ConfigParser:
         preprocess_config = PreprocessConfig(
             start_date=self.config_dict["preprocess"]["start_date"],
             end_date=self.config_dict["preprocess"]["end_date"],
-            save_path=self.config_dict["preprocess"]["save_path"],
-            window=self.config_dict["preprocess"]["window"],
-            prediction_day=self.config_dict["preprocess"]["prediction_day"],
-            percentage=self.config_dict["preprocess"]["percentage"]
+            window=self.config_dict["preprocess"]["window"]
         )
 
         train_config = TrainConfig(
+            window=self.config_dict["train"]["window"],
+            prediction_day=self.config_dict["train"]["prediction_day"],
+            percentage=self.config_dict["train"]["percentage"],
             mav_line=self.config_dict["train"]["mav_line"],
             volume=self.config_dict["train"]["volume"],
             is_binary=self.config_dict["train"]["is_binary"],

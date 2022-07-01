@@ -4,12 +4,12 @@
     "preprocess": {
         "start_date": "2012-05-01",
         "end_date": "2022-05-01",
-        "save_path": "stock_data",
-        "window": 20,
-        "prediction_day": 5,
-        "percentage": 0.05
+        "window": 20
     },
     "train": {
+        "window": 20,
+        "prediction_day": 1,
+        "percentage": 0.04,
         "mav_line": false,
         "volume": false,
         "is_binary": true,
@@ -21,14 +21,14 @@
             "test": 0.1
         },
         "image_size": 224,
-        "batch_size": 64,
-        "model": "vgg16",
+        "batch_size": 128,
+        "model": "vgg16_bn",
         "pretrained": true,
         "optimizer": "Adam",
         "lr_scheduler": "Exponential",
-        "lr_gamma": 0.998,
-        "lr": 1e-4,
-        "weight_decay": 1e-3,
+        "lr_gamma": 0.98,
+        "lr": 0.00008,
+        "weight_decay": 0,
         "num_epoch": 50
     }
 }

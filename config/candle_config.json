@@ -1,0 +1,19 @@
+{
+    "market_colors": {
+        "up": "g",
+        "down": "r",
+        "wick": "inherit",
+        "volume": "inherit",
+        "edge": "inherit",
+        "alpha": 1.0
+    },
+    "custom_style": {
+        "base_mpf_style": "yahoo",
+        "figcolor": "black"
+    },
+    "width_config": {
+        "candle_linewidth": 2,
+        "candle_width": 0.87,
+        "volume_width": 0.8
+    }
+}

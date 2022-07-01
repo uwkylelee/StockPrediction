@@ -1,10 +1,10 @@
+import gc
 import os
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 
 import matplotlib
-import matplotlib.pyplot as plt
 import mplfinance as mpf
 import pandas as pd
 import pandas_datareader as pdr
@@ -41,7 +41,7 @@ class Preprocessor:
             "055550": "신한지주",
             "003550": "LG"
         }
-        self.save_path = config.data_path / self.config.save_path
+        self.save_path = config.data_path / "stock_data"
         self.stock_data_path: Path = self.save_path / "daily_stock_data"
         self.image_path = self.save_path / f"image_volume_{self.volume}_mav_{self.mav_line}"
         self.image_file_path: Path = self.image_path / "stock_chart_image"
@@ -94,14 +94,15 @@ class Preprocessor:
 
             file_prefix = f"{name}_{stock_code}"
 
-            if not os.path.isdir(self.image_file_path):
-                os.mkdir(self.image_file_path)
+            if not os.path.isdir(self.image_file_path / file_prefix):
+                os.mkdir(self.image_file_path / file_prefix)
 
             self._generate_chart_image(stock_df, file_prefix)
 
     def _save_chart_image_known_data(self):
         self.logger.info("Saving_chart_images")
-        for data in os.listdir(self.stock_data_path)[:100]:
+        i = 0
+        for e, data in enumerate(os.listdir(self.stock_data_path)):
             stock_df = pd.read_csv(self.stock_data_path / data, encoding="utf-8")
             stock_df = stock_df[stock_df.columns[1:]]
             stock_df.rename(columns={"date": "Date",
@@ -116,40 +117,58 @@ class Preprocessor:
 
             file_prefix = str(data.split(".")[0])
 
-            if not os.path.isdir(self.image_file_path):
-                os.mkdir(self.image_file_path)
+            if not os.path.isdir(self.image_file_path / file_prefix):
+                os.mkdir(self.image_file_path / file_prefix)
+                os.mkdir(self.image_bin_file_path / file_prefix)
+                os.mkdir(self.image_bin_file_path / file_prefix / "50")
+                os.mkdir(self.image_bin_file_path / file_prefix / "224")
 
-            self._generate_chart_image(stock_df, file_prefix)
+            self._generate_chart_image(stock_df, file_prefix, e)
+
+            i += 1
+            if i == 10:
+                i = 0
+                gc.collect()
 
     def _generate_chart_image(self,
                               df: pd.DataFrame,
-                              file_prefix: str) -> None:
-        edge_color = mpf.make_marketcolors(up="g", down="r", wick="inherit", volume="inherit", edge="None")
-        custom_style = mpf.make_mpf_style(base_mpf_style='yahoo', figcolor="black", marketcolors=edge_color)
-        width_config = {"candle_linewidth": 6,
-                        "candle_width": 0.97,
+                              file_prefix: str,
+                              i: int) -> None:
+        market_colors = mpf.make_marketcolors(up="g", down="r", wick="inherit", volume="inherit", edge="inherit",
+                                              alpha=1.0)
+        custom_style = mpf.make_mpf_style(base_mpf_style="yahoo", figcolor="black", marketcolors=market_colors)
+        width_config = {"candle_linewidth": 2,
+                        "candle_width": 0.87,
                         "volume_width": 0.8}
 
-        for i in tqdm(range(len(df) - self.config.window - self.config.prediction_day), desc=f"Data {file_prefix}"):
+        for i in tqdm(range(len(df) - self.config.window - 5), desc=f"{i}.Data {file_prefix}"):
+            save_path = self.image_file_path / f"{file_prefix}/{i}.png"
+
+            if os.path.isfile(save_path):
+                continue
+
             target_df = df[i: i + self.config.window]
             if not self.is_valid_data(target_df):
                 continue
 
-            label = self.label_data(df, i + self.config.window - 1, 5, self.config.percentage)
+            mav_lines = []
+            if self.mav_line:
+                ma_5 = mpf.make_addplot(target_df.ma_5, width=2)
+                ma_20 = mpf.make_addplot(target_df.ma_20, width=2)
+                ma_60 = mpf.make_addplot(target_df.ma_60, width=2)
+                mav_lines = [ma_5, ma_20, ma_60]
 
-            ma_5 = mpf.make_addplot(target_df.ma_5, width=2)
-            ma_20 = mpf.make_addplot(target_df.ma_20, width=2)
-            ma_60 = mpf.make_addplot(target_df.ma_60, width=2)
-
-            save_path = self.image_file_path / f"{file_prefix}_{i}_{label}.png"
+            x_min = target_df.index[0] - timedelta(days=1)
+            x_max = target_df.index[-1] + timedelta(days=1)
 
             fig, _ = mpf.plot(target_df,
                               type="candle",
                               style=custom_style,
-                              addplot=[ma_5, ma_20, ma_60] if self.mav_line else [],
+                              addplot=mav_lines,
                               update_width_config=width_config,
                               figsize=(10, 10),
                               fontscale=0,
+                              xlim=(x_min, x_max),
                               axisoff=True,
                               volume=self.volume,
                               tight_layout=True,
@@ -161,28 +180,10 @@ class Preprocessor:
             del (fig, _)
 
             # Save PIL image as pickle for faster training step
-            if os.path.isfile(self.image_bin_file_path / f"{file_prefix}_{i}_s244_{label}.pkl"):
-                os.remove(self.image_bin_file_path / f"{file_prefix}_{i}_s244_{label}.pkl")
             for size in [50, 224]:
-                pkl_save_path = self.image_bin_file_path / f"{file_prefix}_{i}_s{str(size)}_{label}.pkl"
+                pkl_save_path = self.image_bin_file_path / f"{file_prefix}/{size}/{i}.pkl"
                 with open(pkl_save_path, "wb") as f:
                     pickle.dump(read_img(save_path, (size, size)), f)
-
-    @classmethod
-    def label_data(cls,
-                   df: pd.DataFrame,
-                   row_num: int,
-                   days: int,
-                   percentage: float):
-        if df["Close"][row_num] * (1 - percentage) >= df["Close"][row_num + days]:
-            # Consider as decrease in price
-            return 1
-        elif df["Close"][row_num] * (1 + percentage) <= df["Close"][row_num + days]:
-            # Consider as increase in price
-            return 2
-        else:
-            # Consider as no change in price
-            return 0
 
     @classmethod
     def is_valid_data(cls,

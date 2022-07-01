@@ -6,14 +6,14 @@ from typing import Dict
 class PreprocessConfig:
     start_date: str
     end_date: str
-    save_path: str
     window: int
-    prediction_day: int
-    percentage: float
 
 
 @dataclass(frozen=True)
 class TrainConfig:
+    window: int
+    prediction_day: int
+    percentage: float
     mav_line: bool
     volume: bool
     is_binary: bool

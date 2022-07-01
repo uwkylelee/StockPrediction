@@ -26,13 +26,13 @@ def preprocess(
         ),
         mav_line: bool = typer.Option(
             default=False,
-            help=f"If True, the stock chart image will contain mav_line."
-                 f"If False, the stock chart image will not contain mav_line."
+            help=f"If True, the stock chart image will contain moving average line."
+                 f"If False, the stock chart image will not contain moving average line."
         ),
         volume: bool = typer.Option(
             default=False,
-            help=f"If True, the stock chart image will contain volume."
-                 f"If False, the stock chart image will not contain volume."
+            help=f"If True, the stock chart image will contain volume chart."
+                 f"If False, the stock chart image will not contain volume chart."
         ),
 ):
     config_parser = ConfigParser(config_file)
