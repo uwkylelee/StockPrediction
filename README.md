@@ -8,7 +8,7 @@ The model predicts whether the future (1-5 days) close price of the stock will i
 
 **_[Anaconda](https://www.anaconda.com/products/distribution#Downloads) is REQUIRED to run .sh files._**
 
-**_Refer to [Pytorch Installation Guide](https://pytorch.org/get-started/locally/) to use GPU during training step._**
+**_Refer to [PyTorch Installation Guide](https://pytorch.org/get-started/locally/) to use GPU during training step._**
 
 ## Development Environment
 
@@ -21,18 +21,15 @@ The model predicts whether the future (1-5 days) close price of the stock will i
 ### Create New Conda Env.
 
 ```shell
-$ conda create -n stockPrediction python=3.10
+$ conda create -n stockPrediction python=3.10 --yes
 $ conda activate stockPrediction
 ```
 
 ### Install Requirements
 
 ```shell
-$ conda install -c conda-forge --yes --file requirements.txt 
-# PyTorch-CPU
-$ conda install pytorch torchvision torchaudio cpuonly -c pytorch
-# PyTorch-GPU
-$ conda install pytorch torchvision torchaudio cudatoolkit=11.3 -c pytorch
+$ conda install pytorch torchvision torchaudio -c pytorch --yes
+$ conda install -c conda-forge --file requirements.txt --yes
 ```
 
 ### Test Build
@@ -43,7 +40,7 @@ $ export PYTHONPATH=${PWD}
 $ python3 src/stock_prediction/test.py
 ```
 
-Following messages will appear if you have followed the above instructions without any changes.
+Following messages will appear if you have followed the above instructions without any errors.
 
 ```
 Current Date: YYYY-MM-DD
@@ -80,8 +77,10 @@ $ python3 src/stock_prediction/main.py train --help
 
 ### Run by Shell Script
 
+**_SHELL SCRIPTS ARE ONLY SUPPORTED FOR MAC OS & LINUX_**
+
 Before running the .sh files, you must change the `user` and `project_path` in .sh files appropriately.   
-If you're not sure what your username is, enter below command to see your username.
+If you're not sure what your username is, enter below command to identify your username.
 
 ```shell
 $ echo $USER
@@ -95,8 +94,6 @@ $ source scripts/app.sh
 ```
 
 ### Run by Terminal
-
-However, there might be some issues with .sh files. If so, you can run web app through terminal as well.
 
 ```shell
 $ conda activate stockPrediction
